@@ -28,14 +28,14 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("messages array required", { status: 400 });
         }
 
-        const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+        const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${apiKey}`,
+            "Lovable-API-Key": apiKey,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "gpt-4o-mini",
+            model: "google/gemini-3-flash-preview",
             stream: true,
             messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
           }),
