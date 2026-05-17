@@ -265,3 +265,9 @@ function TypingDots() {
     </span>
   );
 }
+
+function ClientTime({ ts }: { ts: number }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return <span>{mounted ? formatTime(ts) : ""}</span>;
+}
