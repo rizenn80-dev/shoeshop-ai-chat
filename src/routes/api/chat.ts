@@ -11,9 +11,9 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        const apiKey = process.env.OPENAI_API_KEY;
+        const apiKey = process.env.LOVABLE_API_KEY;
         if (!apiKey) {
-          return new Response("OpenAI is not configured. Set OPENAI_API_KEY.", { status: 500 });
+          return new Response("AI is not configured. Enable Lovable AI.", { status: 500 });
         }
 
         let body: ChatRequestBody;
