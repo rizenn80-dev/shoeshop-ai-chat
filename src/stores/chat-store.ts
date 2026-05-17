@@ -13,8 +13,8 @@ export type ChatMessage = {
 type ChatState = {
   messages: ChatMessage[];
   isResponding: boolean;
-  sendMessage: (content: string) => void;
-  resolvePlaceholder: (id: string, content: string) => void;
+  error: string | null;
+  sendMessage: (content: string) => Promise<void>;
   reset: () => void;
 };
 
@@ -34,10 +34,11 @@ const newId = () =>
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [welcome],
   isResponding: false,
+  error: null,
 
-  sendMessage: (content) => {
+  sendMessage: async (content) => {
     const trimmed = content.trim();
-    if (!trimmed) return;
+    if (!trimmed || get().isResponding) return;
 
     const userMsg: ChatMessage = {
       id: newId(),
@@ -45,8 +46,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       content: trimmed,
       createdAt: Date.now(),
     };
+    const placeholderId = newId();
     const placeholder: ChatMessage = {
-      id: newId(),
+      id: placeholderId,
       role: "assistant",
       content: "",
       pending: true,
@@ -56,24 +58,62 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((s) => ({
       messages: [...s.messages, userMsg, placeholder],
       isResponding: true,
+      error: null,
     }));
 
-    // Simulated AI response — replace with real backend call later.
-    setTimeout(() => {
-      get().resolvePlaceholder(
-        placeholder.id,
-        "Got it — I'll handle that once the backend is connected.",
-      );
-    }, 900);
+    // Build payload from real chat history (exclude the placeholder and welcome).
+    const history = get()
+      .messages.filter((m) => m.id !== placeholderId && m.id !== "welcome")
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+
+      if (!res.ok || !res.body) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Request failed (${res.status})`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        set((s) => ({
+          messages: s.messages.map((m) =>
+            m.id === placeholderId ? { ...m, content: acc, pending: false } : m,
+          ),
+        }));
+      }
+
+      set((s) => ({
+        isResponding: false,
+        messages: s.messages.map((m) =>
+          m.id === placeholderId
+            ? { ...m, content: acc || "(no response)", pending: false }
+            : m,
+        ),
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      set((s) => ({
+        isResponding: false,
+        error: message,
+        messages: s.messages.map((m) =>
+          m.id === placeholderId
+            ? { ...m, content: `⚠️ ${message}`, pending: false }
+            : m,
+        ),
+      }));
+    }
   },
 
-  resolvePlaceholder: (id, content) =>
-    set((s) => ({
-      isResponding: false,
-      messages: s.messages.map((m) =>
-        m.id === id ? { ...m, content, pending: false } : m,
-      ),
-    })),
-
-  reset: () => set({ messages: [welcome], isResponding: false }),
+  reset: () => set({ messages: [welcome], isResponding: false, error: null }),
 }));
