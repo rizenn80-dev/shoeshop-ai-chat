@@ -4,6 +4,7 @@ import { Send, Bot, User, Footprints } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useChatStore, type ChatMessage } from "@/stores/chat-store";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -19,12 +20,6 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
-
 const SUGGESTIONS = [
   "Show today's top selling sneakers",
   "Check stock for Nike Air Max size 10",
@@ -33,14 +28,10 @@ const SUGGESTIONS = [
 ];
 
 function Index() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "Hi! I'm your AI Chat Manager for the shoe store. Ask me about inventory, sales, customers, or restocking.",
-    },
-  ]);
+  const messages = useChatStore((s) => s.messages);
+  const isResponding = useChatStore((s) => s.isResponding);
+  const sendMessage = useChatStore((s) => s.sendMessage);
+
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -48,17 +39,9 @@ function Index() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const send = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: trimmed };
-    const reply: Message = {
-      id: crypto.randomUUID(),
-      role: "assistant",
-      content:
-        "Got it — I'll handle that once the backend is connected. (No backend wired up yet.)",
-    };
-    setMessages((m) => [...m, userMsg, reply]);
+  const handleSend = (text: string) => {
+    if (!text.trim()) return;
+    sendMessage(text);
     setInput("");
   };
 
@@ -90,7 +73,7 @@ function Index() {
             {SUGGESTIONS.map((s) => (
               <button
                 key={s}
-                onClick={() => send(s)}
+                onClick={() => handleSend(s)}
                 className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
               >
                 {s}
@@ -102,7 +85,7 @@ function Index() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            send(input);
+            handleSend(input);
           }}
           className="sticky bottom-0 mb-4 flex items-center gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm"
         >
@@ -112,7 +95,7 @@ function Index() {
             placeholder="Ask about inventory, sales, customers…"
             className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
           />
-          <Button type="submit" size="icon" disabled={!input.trim()}>
+          <Button type="submit" size="icon" disabled={!input.trim() || isResponding}>
             <Send className="h-4 w-4" />
             <span className="sr-only">Send</span>
           </Button>
@@ -122,7 +105,7 @@ function Index() {
   );
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
   return (
     <div className={cn("flex gap-3", isUser && "flex-row-reverse")}>
@@ -142,8 +125,18 @@ function MessageBubble({ message }: { message: Message }) {
             : "rounded-tl-sm bg-muted text-foreground",
         )}
       >
-        {message.content}
+        {message.pending ? <TypingDots /> : message.content}
       </div>
     </div>
+  );
+}
+
+function TypingDots() {
+  return (
+    <span className="inline-flex gap-1 py-1">
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
+    </span>
   );
 }
