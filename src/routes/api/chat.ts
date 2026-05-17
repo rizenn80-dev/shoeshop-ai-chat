@@ -11,9 +11,9 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        const apiKey = process.env.LOVABLE_API_KEY;
+        const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
-          return new Response("AI is not configured. Please enable Lovable AI.", { status: 500 });
+          return new Response("OpenAI is not configured. Set OPENAI_API_KEY.", { status: 500 });
         }
 
         let body: ChatRequestBody;
@@ -28,14 +28,14 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("messages array required", { status: 400 });
         }
 
-        const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
-            "Lovable-API-Key": apiKey,
+            Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
+            model: "gpt-4o-mini",
             stream: true,
             messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
           }),
