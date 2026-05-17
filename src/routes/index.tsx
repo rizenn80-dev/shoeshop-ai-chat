@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Footprints } from "lucide-react";
+import { Send, Bot, User, Footprints, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -29,8 +29,10 @@ const SUGGESTIONS = [
 
 function Index() {
   const messages = useChatStore((s) => s.messages);
+  const title = useChatStore((s) => s.title);
   const isResponding = useChatStore((s) => s.isResponding);
   const sendMessage = useChatStore((s) => s.sendMessage);
+  const newChat = useChatStore((s) => s.newChat);
 
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -49,15 +51,26 @@ function Index() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Footprints className="h-5 w-5" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <h1 className="text-base font-semibold leading-tight">AI Chat Manager</h1>
-            <p className="text-xs text-muted-foreground">Shoe store operations assistant</p>
+            <p className="truncate text-xs text-muted-foreground">{title}</p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={newChat}
+            disabled={isResponding}
+            className="gap-1.5"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Chat
+          </Button>
         </div>
       </header>
+
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4">
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
