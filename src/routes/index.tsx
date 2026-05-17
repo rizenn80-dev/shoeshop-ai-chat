@@ -232,7 +232,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             isUser && "flex-row-reverse",
           )}
         >
-          <span>{formatTime(message.createdAt)}</span>
+          <span suppressHydrationWarning>{formatTime(message.createdAt)}</span>
           {!isUser && !message.pending && message.content && (
             <button
               onClick={onCopy}
