@@ -232,7 +232,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             isUser && "flex-row-reverse",
           )}
         >
-          <span suppressHydrationWarning>{formatTime(message.createdAt)}</span>
+          <ClientTime ts={message.createdAt} />
           {!isUser && !message.pending && message.content && (
             <button
               onClick={onCopy}
@@ -264,4 +264,10 @@ function TypingDots() {
       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
     </span>
   );
+}
+
+function ClientTime({ ts }: { ts: number }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return <span>{mounted ? formatTime(ts) : ""}</span>;
 }
