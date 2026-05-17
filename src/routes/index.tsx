@@ -78,13 +78,13 @@ function Index() {
       </header>
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4">
-        <ScrollArea className="flex-1" viewportRef={scrollRef}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <div className="space-y-6 py-6">
             {messages.map((m) => (
               <MessageBubble key={m.id} message={m} />
             ))}
           </div>
-        </ScrollArea>
+        </div>
 
         {messages.length <= 1 && (
           <div className="mb-3 flex flex-wrap gap-2">
